@@ -20,18 +20,24 @@ const PORT = process.env.PORT || 5000;
 const SESSION_SECRECT = process.env.SESSION_SECRECT;
 
 export async function startServer() {
+  const isProduction = process.env.NODE_ENV === 'production'
   const app = express();
   // const pubsub = new PubSub();
-
   const sessionMiddleware = cookieSession({
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     name: "qid",
+    httpOnly: true,
+    sameSite: 'none',
     keys: [process.env.SESSION_SECRECT],
-    maxAge: 24 * 60 * 60 * 1000, // session will expire after 24 hours
+    maxAge: 24 * 60 * 60 * 1000 * 365, // session will expire after 1 year
   });
+  !isProduction && app.set('trust proxy', 1);
   const passportMiddleware = passport.initialize();
   const passportSessionMiddleware = passport.session();
-  (app as any).use(cors({ origin: '*', credentials: true }));
+  // (app as any).use(cors({
+  //   origin: 'https://studio.apollographql.com',
+  //   credentials: true
+  // }));
   app.use(bodyParser.json());
   app.use(cookieParser());
   app.use(sessionMiddleware);
@@ -50,8 +56,10 @@ export async function startServer() {
 
   const server = new ApolloServer({
     schema,
-    context({ req, res }) {
-      return { req, res }
+    context: ({ req, res, }) => {
+      let context = buildContext({ req, res });
+      let currentUser = context.getUser();
+      return { ...context, currentUser, req, res, }
     },
 
     // subscriptions: {
@@ -66,7 +74,14 @@ export async function startServer() {
     // },
   });
   await server.start();
-  server.applyMiddleware({ app, cors: false, path: "/graphql" });
+  server.applyMiddleware({
+    app,
+    cors: {
+      credentials: true,
+      origin: "https://studio.apollographql.com",
+    },
+    path: "/graphql"
+  });
   const httpServer = http.createServer(app);
   // server.installSubscriptionHandlers(httpServer);
 

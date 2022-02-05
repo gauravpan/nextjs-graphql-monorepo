@@ -3,10 +3,21 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
-type Hello {
-  name: String!
+type Mutation {
+  createUser(email: String!, name: String!, password: String!): User!
+  login(email: String!, password: String!): User!
+  logout: Boolean!
+  updateProfile(currentPassword: String!, newPassword: String!): User!
 }
 
 type Query {
-  me: Hello
+  me: User!
+}
+
+type User {
+  email: String
+  google_id: String
+  imageURL: String
+  name: String
+  username: String
 }

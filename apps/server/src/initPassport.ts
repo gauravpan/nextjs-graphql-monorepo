@@ -1,20 +1,20 @@
 import passport from "passport";
 import { GraphQLLocalStrategy } from "graphql-passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { UserModel as User } from "./entities/user.entity";
 
-const User: any = {}
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_CALLBACK = process.env.GOOGLE_CALLBACK;
 
 passport.serializeUser(function (user: any, done) {
   console.log("user serialized", user.name);
-  return done(null, user.id);
+  return done(null, user._id);
 });
 
-passport.deserializeUser(async function (id: number, done) {
-  const user = await User.findOne(id);
-  console.log("Deserialized", user.name, "---", user.username);
+passport.deserializeUser(async function (id: string, done) {
+  const user = await User.findById(id);
+  console.log("[Deserialized] Request from", user.name, "---", user._id);
   done(null, user);
 });
 
@@ -30,9 +30,7 @@ passport.use(
       done(new Error("User not registered"), null);
       return;
     }
-
-    let isValidPassword = await matchingUser.comparePassword(password);
-
+    let isValidPassword = await matchingUser.checkPassword(password);
     if (isValidPassword) {
       done(null, matchingUser);
     } else {
@@ -40,7 +38,6 @@ passport.use(
     }
   })
 );
-
 //google
 const handleProfileData = async (profile, done) => {
   let matchingUser = await User.findOne({ google_id: profile.google_id });
@@ -51,8 +48,7 @@ const handleProfileData = async (profile, done) => {
     console.log("not matched");
 
     try {
-      let newUser = User.create(profile);
-      await User.save(newUser);
+      let newUser = await User.create(profile);
       done(null, newUser);
     } catch (error) {
       console.log(error);
