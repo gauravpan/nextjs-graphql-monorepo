@@ -1,6 +1,6 @@
 import passport from "passport";
 import { GraphQLLocalStrategy } from "graphql-passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GoogleStrategy, VerifyCallback } from "passport-google-oauth20";
 import { UserModel as User } from "./entities/user.entity";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -39,19 +39,18 @@ passport.use(
   })
 );
 //google
-const handleProfileData = async (profile, done) => {
+const handleProfileData = async (profile, done: VerifyCallback) => {
   let matchingUser = await User.findOne({ google_id: profile.google_id });
   if (matchingUser) {
     done(null, matchingUser);
     return;
   } else {
-    console.log("not matched");
-
     try {
       let newUser = await User.create(profile);
       done(null, newUser);
     } catch (error) {
       console.log(error);
+      done(error.message)
     }
   }
 };

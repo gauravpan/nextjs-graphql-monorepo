@@ -2,12 +2,9 @@ import { getModelForClass, Post, Pre, prop } from '@typegoose/typegoose'
 import { Field, ObjectType } from 'type-graphql'
 import bcrypt from 'bcrypt'
 @Pre<User>('save', async function () {
-    if (this.isNew) {
+    if (this.isNew && this.password) {
         this.password = await bcrypt.hash(this.password, 10);
-        console.log("password hashed");
-
     }
-    console.log("password hashed");
 })
 
 @ObjectType()

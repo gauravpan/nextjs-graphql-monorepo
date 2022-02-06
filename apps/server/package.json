@@ -29,6 +29,7 @@
     "type-graphql": "^1.1.1"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.0"
+    "@types/bcrypt": "^5.0.0",
+    "@types/passport-google-oauth20": "^2.0.11"
   }
 }
